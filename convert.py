@@ -1,6 +1,8 @@
 import sys
 import datetime
 from bs4 import BeautifulSoup
+from collections import defaultdict
+from sortedcontainers import SortedList
 
 class Transformer():
     def __init__(self, stdin, fname):
@@ -13,29 +15,35 @@ class Transformer():
 
     def transform(self):
         entries = {}
+        tag_lookup = defaultdict(SortedList)
         soup = BeautifulSoup(self.stdin, 'html.parser')
+        
         for header in soup.find_all('h1'):
             date = self.date.replace(day=int(header.get_text()))
-            bullet_list = header.find_next_sibling('ul')
-            results = self.parse_bullets(bullet_list.find_all('li'))
-            entries[date.isoformat()] = results
 
-        return entries
+            ul = header.find_next_sibling('ul')
+            results, tags = self.parse_bullets(ul.find_all('li'))
+
+            entries[date.isoformat()] = results
+            [tag_lookup[tag].add(date) for tag in tags]
+
+        return entries, tag_lookup
 
     def parse_bullets(self, bullets):
         all_results = []
+        all_tags = set()
+
         for b in bullets:
             bolded = b.find_all('strong')
             tags = [x.get_text() for x in bolded]
-            [x.decompose() for x in bolded]
+            [x.decompose() for x in bolded] # remove from text
             
-            paragraphs = [x.get_text() for x in b.find_all('p')]
-            result = {
-                'text': paragraphs,
-                'tags': tags
-            }
-            all_results.append(result)
-        return all_results
+            text = [x.get_text() for x in b.find_all('p')]
+            
+            all_results.append({ 'text': text, 'tags': tags })
+            [all_tags.add(tag) for tag in tags]
+
+        return all_results, all_tags
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -43,5 +51,6 @@ if __name__ == '__main__':
         sys.exit(1)
 
     t = Transformer(sys.stdin, sys.argv[1])
-    entries = t.transform()
-    print(entries)
+    entries, tag_lookup = t.transform()
+    # print(entries)
+    # print(tag_lookup)
