@@ -4,4 +4,4 @@ then
     exit 1
 fi
 
-pandoc -f gfm -t html $1.md #| python convert.py
+pandoc -f gfm -t html $1.md | python convert.py $1
