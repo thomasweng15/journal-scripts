@@ -71,10 +71,12 @@ if __name__ == '__main__':
     client = MongoClient('localhost', 27017)
 
     db = client.journal_db
-    tag_collection = db.tags
-    result = tag_collection.insert_many(tags)
-    print(result.inserted_ids)
+    for tag in tags:
+        query = {'name': {'$eq': tag['name']}}
+        result = db.tags.update(query, tag, upsert=True)
+        print(result)
 
-    entries_collection = db.entries
-    result = entries_collection.insert_many(entries)
-    print(result.inserted_ids)
+    for entry in entries:
+        query = {'date': {'$eq': entry['date']}}
+        result = db.entries.update(query, entry, upsert=True)
+        print(result)
