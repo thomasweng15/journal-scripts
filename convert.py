@@ -12,14 +12,30 @@ class Transformer():
         return datetime.date(int('20' + year), int(month), 1)
 
     def transform(self):
+        entries = {}
         soup = BeautifulSoup(self.stdin, 'html.parser')
         for header in soup.find_all('h1'):
             date = self.date.replace(day=int(header.get_text()))
-            bullets = header.find_next_sibling('ul')
-            self.parse_bullets(bullets)
+            bullet_list = header.find_next_sibling('ul')
+            results = self.parse_bullets(bullet_list.find_all('li'))
+            entries[date.isoformat()] = results
+
+        return entries
 
     def parse_bullets(self, bullets):
-        pass
+        all_results = []
+        for b in bullets:
+            bolded = b.find_all('strong')
+            tags = [x.get_text() for x in bolded]
+            [x.decompose() for x in bolded]
+            
+            paragraphs = [x.get_text() for x in b.find_all('p')]
+            result = {
+                'text': paragraphs,
+                'tags': tags
+            }
+            all_results.append(result)
+        return all_results
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -27,4 +43,5 @@ if __name__ == '__main__':
         sys.exit(1)
 
     t = Transformer(sys.stdin, sys.argv[1])
-    t.transform()
+    entries = t.transform()
+    print(entries)
