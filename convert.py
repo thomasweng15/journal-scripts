@@ -59,6 +59,23 @@ class Transformer():
 
         return all_results, all_tags
 
+class DBClient():
+    def __init__(self):
+        self.client = MongoClient('localhost', 27017)
+        self.db = self.client.journal_db
+
+    def save(self, entries, tags):
+        for entry in entries:
+            query = {'date': {'$eq': entry['date']}}
+            result = self.db.entries.update(query, entry, upsert=True)
+            print(result)
+        
+        # TODO tags need to be merged
+        for tag in tags:
+            query = {'name': {'$eq': tag['name']}}
+            result = self.db.tags.update(query, tag, upsert=True)
+            print(result)
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print("Error: No file argument.")
@@ -67,16 +84,5 @@ if __name__ == '__main__':
     t = Transformer(sys.stdin, sys.argv[1])
     entries, tags = t.transform()
     
-    client = MongoClient()
-    client = MongoClient('localhost', 27017)
-
-    db = client.journal_db
-    for tag in tags:
-        query = {'name': {'$eq': tag['name']}}
-        result = db.tags.update(query, tag, upsert=True)
-        print(result)
-
-    for entry in entries:
-        query = {'date': {'$eq': entry['date']}}
-        result = db.entries.update(query, entry, upsert=True)
-        print(result)
+    c = DBClient()
+    c.save(entries, tags)
