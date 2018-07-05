@@ -48,7 +48,7 @@ class Transformer():
         for b in bullets:
             bolded = b.find_all('strong')
             tags = [x.get_text() for x in bolded]
-            [x.decompose() for x in bolded] # remove from text
+            [x.decompose() for x in bolded]
             
             text = [x.get_text() for x in b.find_all('p')] \
                 if b.find('p') \
